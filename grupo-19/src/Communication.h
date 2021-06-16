@@ -1,8 +1,8 @@
 #ifndef COMMUNICATION_HEADER
 #define COMMUNICATION_HEADER
 
-#define Client_Server "/tmp/ClientToServer"								//Isto tem de ser alterado para temp/ (!!!)
-#define Server_Client "/tmp/ServerToClient"								//Isto tem de ser alterado para temp/ (!!!)
+#define Client_Server "tmp/c_to_s"								//Isto tem de ser alterado para temp/ (!!!)
+#define Server_Client "tmp/s_to_c"								//Isto tem de ser alterado para temp/ (!!!)
 
 
 

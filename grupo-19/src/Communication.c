@@ -8,7 +8,7 @@
 #include "ReadFilters.h"
 #include "Communication.h"
 
-#define CLIENT_LINE 500
+#define CLIENT_LINE 1024
 
 
 // /------------------------------------------------------------------------------------------------------------
@@ -31,7 +31,7 @@ void read_from_server(){																						// Lê uma mensagem enviada pelo s
 
 	ssize_t read_bytes = -1;																					// Número de bytes que serão registados aquando da leitura
 
-	int communication_fd = open(Server_Client, O_RDONLY);														// Abrir o "terminal" de comunicação
+	int communication_fd = open("tmp/s_to_c", O_RDONLY);														// Abrir o "terminal" de comunicação
 	simple_error_handler(communication_fd, "\n#> [server_status] : O servidor provavelmente esta offline\n");	// Se não for possível comunicar c/ servidor
 
 	write(1, "\n", 1);
@@ -39,8 +39,9 @@ void read_from_server(){																						// Lê uma mensagem enviada pelo s
 	if(!fork()){																								// Leitura
 		while( (read_bytes = read(communication_fd, read_text, CLIENT_LINE)) > 0){
 
+			read_text[strlen(read_text)] = '\0';
 			simple_error_handler(read_bytes, "\n#> Erro na leitura do servidor : Communication");				// Se houver erro na leitura, erro e termina
-			int write_status = write(1, read_text, read_bytes);
+			int write_status = write(1, read_text, strlen(read_text));
 			simple_error_handler(write_status, "\n#> Erro na escrita do cliente : Communication");				// Se houver erro na escrita, erro e termina
 		}
 	}
@@ -49,8 +50,8 @@ void read_from_server(){																						// Lê uma mensagem enviada pelo s
 	}
 	
 
-	close(communication_fd);																					// Fechar o terminal de comunicação
 	free(read_text);																							// Free da memória alocada para ler a info do servidor
+	close(communication_fd);																					// Fechar o terminal de comunicação
 }
 // /------------------------------------------------------------------------------------------------------------
 
@@ -64,8 +65,10 @@ int write_to_cliente(char* something){																			// Automatização no p
 	simple_error_handler(server_fd, "\n#> [server_error]: Nao foi possivel criar ligacao com cliente\n");		// Em caso de erro, avisar e sair
 	if(server_fd < 0) return -1;
 	
-	int write_status = write(server_fd, something, strlen(something));											// Escrita para o cliente
-	write(server_fd, "\n", 1);
+	//write(server_fd, "\n", 1);
+	
+	int write_status = write(server_fd, something, strlen(something)+1);											// Escrita para o cliente
+	write(server_fd, "\n\0", 2);
 	
 	close(server_fd);																							// Fechar o terminal de comunicação
 	
@@ -86,30 +89,40 @@ int server_client_input(char** tasks, int n_tasks, int argc, char** argv, FILTER
 
 		int size = get_number_of_filters(ff);																	// Número de filtros carregados no sistema
 		FILTER* filters = get_filters(ff);																		// Filtros carregados no sistema
+
 		char* line = malloc(sizeof(char) * CLIENT_LINE);														// Alocação de memória para a mensagem a retornar
-		
+		char* aux = malloc(sizeof(char) * 500); strcpy(line, "");
+
 		if(tasks){																								
 			for(int i = 0; i < n_tasks; i++){
 			
-				sprintf(line, "#> [task #%d] - [%s]\n", i+1, tasks[i]);
-				write_to_cliente(line);
+				sprintf(aux, "#> [task #%d] - [%s]\n", i+1, tasks[i]);
+				strcat(line, aux);
+				//write_to_cliente(line);
 			}
 		}
+		strcat(line, "\0");
+		write_to_cliente(line);
+		strcpy(line, "");
 
 		for(int i = 0; i < size; i++){																			// Enquanto houver filtros
 			
 			char* current_filter = get_filter_id(filters[i]);													// Percorrer 1 a um
-			sprintf(line, "#> [server_status] - Filter [%s] : %d/%d (running/max)", current_filter, get_filter_em_uso(filters[i]), get_filter_max(filters[i]));
-
+			sprintf(aux, "#> [server_status] - Filter [%s] : %d/%d (running/max)\n", current_filter, get_filter_em_uso(filters[i]), get_filter_max(filters[i]));
+			strcat(line, aux);
 																												// Definir o formato da informação a ser passada
-			write_to_cliente(line);																				// Envio da informação ao cliente
 			free(current_filter);																				// Free da memória alocada para receebr o nome do filtro
 		}
+		strcat(line, "\0");
+		write_to_cliente(line);																				// Envio da informação ao cliente
 
 		pid_t server_pid = getpid();																			// PID do processo atual, para
-		sprintf(line, "#> [server_status] - pid : %d\n\n", server_pid);											// também retornar ao cliente
+		strcpy(line, "");
+		sprintf(line, "#> [server_status] - pid : %d\n", server_pid);											// também retornar ao cliente
+		strcat(line, "\0");
 		write_to_cliente(line);																					// Envio da mensagem
 
+		free(aux);
 		free(line);																								// Free da memória alocada para as mensagens acima expostas
 		return 0;																								// Retorno de 0, em sucesso
 	}
@@ -117,17 +130,21 @@ int server_client_input(char** tasks, int n_tasks, int argc, char** argv, FILTER
 
 	else if (!strcmp(argv[0], "filters")){																		// Se o pedido for para ver os filtros disponiveis
 
+		char* line = malloc(sizeof(char) * CLIENT_LINE);														// Alocação de memória para a mensagem a retornar
+		char* aux = malloc(sizeof(char) * 500); strcpy(line, "");
 		int size = get_number_of_filters(ff);																	// Número de filtros
 		FILTER* filters = get_filters(ff);																		// Filtros
 
 		for(int i = 0; i < size; i++){																			// Enquanto há filtros
 
 			char* current_filter = get_filter_id(filters[i]);
-			write_to_cliente(current_filter);																	// Enviar os seus nomes para o cliente
+			sprintf(aux, "#> %s\n", current_filter);
+			strcat(line, aux);
 			free(current_filter);
 		}
-		write_to_cliente("\n");
+		write_to_cliente(line);																	// Enviar os seus nomes para o cliente
 
+		free(aux);free(line);
 		return 0;																								// Retorno de 0, sucesso
 	}
 

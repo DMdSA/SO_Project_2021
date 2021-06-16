@@ -19,8 +19,6 @@ obj/InputHandler.o: src/InputHandler.c
 obj/ReadFilters.o: src/ReadFilters.c
 	gcc -Wall -g -c src/ReadFilters.c -o obj/ReadFilters.o
 
-
-
 bin/aurras: obj/aurras.o obj/Communication.o obj/InputHandler.o obj/ReadFilters.o
 	gcc -g obj/aurras.o obj/Communication.o obj/InputHandler.o obj/ReadFilters.o -o bin/aurras
 
@@ -33,7 +31,7 @@ clean:
 	rm bin/aurrasd
 	rm tmp/*
 
-openServer:
+openserver:
 	bin/aurrasd etc/aurrasd.conf bin/aurrasd-filters
 
 status:

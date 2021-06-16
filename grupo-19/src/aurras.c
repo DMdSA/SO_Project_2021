@@ -30,8 +30,7 @@ int main(int argc, char** argv){
 	
 	signal(SIGINT, ctrl_c_handler);																			// CTRL-C handler
 
-
-	int communication_fd = open(Client_Server, O_WRONLY);
+	int communication_fd = open("tmp/c_to_s", O_WRONLY);
 
 	simple_error_handler(communication_fd, "\n#> [offline]: the server seems to be offline\n\n\n");		// Se o servidor estiver offline, retorna 1
 
@@ -60,7 +59,7 @@ int main(int argc, char** argv){
 			if(!strcmp(argv[1], "status") || !strcmp(argv[1], "filters")){									// Se o pedido tiver sido "status" ou "filters", fica à
 			
 				read_from_server();																			// espera de uma resposta do servidor
-
+				fflush(stdout);
 				return 0;																					// Retorna 0
 			}
 

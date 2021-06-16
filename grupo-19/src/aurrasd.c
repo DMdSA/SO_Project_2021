@@ -123,10 +123,11 @@ int start_server(){
 
 	printf("\n#> A ligar servidor ...\n");
 	
-	mkfifo(Client_Server, 0644);																				// Criação de pipe para leitura do cliente
-	mkfifo(Server_Client, 0644);																				// Criação de pipe para escrita para cliente
+	mkfifo("tmp/c_to_s", 0644);																				// Criação de pipe para leitura do cliente
+	mkfifo("tmp/s_to_c", 0644);																				// Criação de pipe para escrita para cliente
 
 	int server_fd = open(Client_Server, O_RDONLY);																// Abrir pipe para leitura (cliente-servidor)
+
 	simple_error_handler(server_fd, "\n#> [server_status]: Nao foi possivel iniciar o servidor\n");				// Aviso, caso dê erro
 
 	printf("\n#> [online]: O servidor encontra-se agora online\n\n"); fflush(stdout);
@@ -245,6 +246,7 @@ int execute_aurras(char* executable_name, char* inputfile, char* outputfile, int
 
 		fflush(stdout);
 		int counter = 0;
+		
 
 		while(counter < n_filters){																	// Aplicar sucessivamente os N filtros pedidos
 		
@@ -281,7 +283,6 @@ int tratamento_execucao(int argc, char** argv, FILTERS_FOLDER ff){
 	for(int i = referencia_filtros; i < argc; i++){
 
 		executaveis[index] = get_executableName(argv[i], ff);										// Guardar cada executável
-
 		index++;
 	}
 
@@ -355,6 +356,7 @@ int main(int argc, char** argv){
 	strcpy(line_buffer, "\0");
 	if(!line_buffer) simple_error_handler(-1, "\n#> Erro a alocar memoria para line_buffer: Server.c:main\n");
 	
+
 	int sv_fd = start_server();																		// Iniciar o servidor
 
 
@@ -382,7 +384,6 @@ int main(int argc, char** argv){
 
 					used = validate_availability(n_args, my_argv, stored_filters);					//check da disponibilidade de filtros
 					if(used){
-
 
 
 						update_filters(n_args, my_argv, stored_filters, 1);							// Atualiza os filtros no campo "in_use"

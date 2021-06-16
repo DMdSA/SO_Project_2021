@@ -36,7 +36,7 @@ int client_input(int argc, char** argv){																// Tratamento dos inputs
 				
 			else{
 					printf("\n#> Esse comando nao foi reconhecido"); fflush(stdout);					// Comando não reconhecido
-					printf("\n\n#> Comandos que podes utilizar:\n\n\t%s status\n\t%s transform input-filename output-filename filter-id-1 filter-id-2 ...\n\n\t%s filters\n\n\n", argv[0], argv[0], argv[0]);
+					printf("\n\n#> Comandos que podes utilizar:\n\n\t%s status\n\t%s transform input-filename output-filename filter-id-1 filter-id-2 ...\n\t%s filters\n\n\n", argv[0], argv[0], argv[0]);
 					return 2;																			// *2* caso não tenha nada para fazer
 				}
 
