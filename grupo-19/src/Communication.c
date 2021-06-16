@@ -24,21 +24,6 @@ void simple_error_handler(int error, char* msg){																// Envia uma men
 
 
 // /------------------------------------------------------------------------------------------------------------
-void ctrl_c_handler(int signal){																				// CTRL-C handler
-
-	char bye[] = "\n#> Leaving program...\n\n";						//aqui devia esperar que todos terminassem ne?..
-
-	write(1, bye, strlen(bye));					//Antes sizeof
-
-	unlink(Client_Server);																						// Retira ambos os fifos
-	unlink(Server_Client);																						// Retira ambos os fifos
-	exit(0);																									// Retorna 0
-}
-// /------------------------------------------------------------------------------------------------------------
-
-
-
-// /------------------------------------------------------------------------------------------------------------
 void read_from_server(){																						// Lê uma mensagem enviada pelo servidor
 
 	char* read_text = malloc(sizeof(char) * CLIENT_LINE);
@@ -62,6 +47,8 @@ void read_from_server(){																						// Lê uma mensagem enviada pelo s
 	else{
 		wait(NULL);																								// Esperar que a leitura termine
 	}
+	
+
 	close(communication_fd);																					// Fechar o terminal de comunicação
 	free(read_text);																							// Free da memória alocada para ler a info do servidor
 }
@@ -79,10 +66,12 @@ int write_to_cliente(char* something){																			// Automatização no p
 	
 	int write_status = write(server_fd, something, strlen(something));											// Escrita para o cliente
 	write(server_fd, "\n", 1);
+	
+	close(server_fd);																							// Fechar o terminal de comunicação
+	
 	simple_error_handler(write_status, "\n#> [server_error]: Nao foi possivel escrever para o cliente\n");		// Em caso de erro, avisar
 	if(write_status < 0) return -1;
 
-	close(server_fd);																							// Fechar o terminal de comunicação
 	return 0;
 }
 // /------------------------------------------------------------------------------------------------------------
@@ -90,7 +79,7 @@ int write_to_cliente(char* something){																			// Automatização no p
 
 
 // /------------------------------------------------------------------------------------------------------------
-int server_client_input(char* program_name, int argc, char** argv, FILTERS_FOLDER ff, int fifo){				// "Interpretador" do servidor
+int server_client_input(char** tasks, int n_tasks, int argc, char** argv, FILTERS_FOLDER ff){				// "Interpretador" do servidor
 																												// Aqui os argc/argv são diferentes dos passados na main
 	
 	if(!strcmp(argv[0], "status")){																				// Caso o cliente tenha pedido o status
@@ -98,7 +87,14 @@ int server_client_input(char* program_name, int argc, char** argv, FILTERS_FOLDE
 		int size = get_number_of_filters(ff);																	// Número de filtros carregados no sistema
 		FILTER* filters = get_filters(ff);																		// Filtros carregados no sistema
 		char* line = malloc(sizeof(char) * CLIENT_LINE);														// Alocação de memória para a mensagem a retornar
-																												// ao cliente
+		
+		if(tasks){																								
+			for(int i = 0; i < n_tasks; i++){
+			
+				sprintf(line, "#> [task #%d] - [%s]\n", i+1, tasks[i]);
+				write_to_cliente(line);
+			}
+		}
 
 		for(int i = 0; i < size; i++){																			// Enquanto houver filtros
 			
@@ -145,6 +141,12 @@ int server_client_input(char* program_name, int argc, char** argv, FILTERS_FOLDE
 
 	else if(!strcmp(argv[0], "transform")){																		// Filtros não encontrados
 
+			for(int i = 0; i < argc; i++){
+				printf("\"%s\" ", argv[i]); fflush(stdout);
+			}
+
+
+
 			unsigned int n;
 			char** filters = get_filters_for_user(ff, &n);														// Envia ao cliente os filtros que estão disponíveis
 			write_to_cliente("\n#> [server_status] : Not all filters you ordered are recognized\n");			// Avisa o cliente do seu erro
@@ -160,10 +162,23 @@ int server_client_input(char* program_name, int argc, char** argv, FILTERS_FOLDE
 // /------------------------------------------------------------------------------------------------
 
 
+// /------------------------------------------------------------------------------------------------------------// Função de leitura do servidor auxiliar
+void wait_before_leaving(){																						// necessária para controlar o término do comando
+																												// do utilizador
+	char disposable[10];
+	ssize_t read_bytes = -1;
 
+	int communication_fd = open(Server_Client, O_RDONLY);
+	simple_error_handler(communication_fd, "\n#> [server_status] : O servidor provavelmente esta offline\n");
 
+	while( (read_bytes = read(communication_fd, disposable, 10)) > 0){
 
-
-
-
-
+		simple_error_handler(read_bytes, "\n#> Erro na leitura do servidor : Communication");					// Se houver erro na leitura, erro e termina
+		int write_status = write(1, disposable, read_bytes);
+		simple_error_handler(write_status, "\n#> Erro na escrita do cliente : Communication");					// Se houver erro na escrita, erro e termina
+	}	
+	
+	write(1, "\n", 1);
+	close(communication_fd);
+}
+// /------------------------------------------------------------------------------------------------------------
