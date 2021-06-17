@@ -67,9 +67,12 @@ int write_to_cliente(char* something){																			// Automatização no p
 	
 	//write(server_fd, "\n", 1);
 	
-	int write_status = write(server_fd, something, strlen(something)+1);											// Escrita para o cliente
-	write(server_fd, "\n\n\0", 3);
+	char* aux = malloc(sizeof(char) * strlen(something) + 2);
+	sprintf(aux, "%s\n", something);
+
+	int write_status = write(server_fd, aux, strlen(aux)+1);											// Escrita para o cliente
 	
+	free(aux);
 	close(server_fd);																							// Fechar o terminal de comunicação
 	
 	simple_error_handler(write_status, "\n#> [server_error]: Nao foi possivel escrever para o cliente\n");		// Em caso de erro, avisar
