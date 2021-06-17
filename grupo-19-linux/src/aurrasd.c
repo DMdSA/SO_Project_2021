@@ -31,7 +31,7 @@ int n_tasks = 0;
 // /------------------------------------------------------------------------------------------------------------
 void ctrl_c_handler(int signal){																				// CTRL-C handler
 
-	char bye[] = "\n#> Leaving program...\n\n"
+	char bye[] = "\n#> Leaving program...\n\n";
 
 	write(1, bye, strlen(bye));
 
